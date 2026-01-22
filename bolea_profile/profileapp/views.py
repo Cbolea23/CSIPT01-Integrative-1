@@ -5,11 +5,10 @@ def profile_view(request):
     my_name = "Christian Bolea" 
     my_course = "Bachelor of Science in Information Technology"
     
-    q1_answer = "Using HttpResponse for large projects is messy and hard to maintain. Mixing Python and HTML makes code difficult to read, debug, and format."
+    q1_answer = "Using HttpResponse for large projects is messy. Mixing Python and HTML makes code difficult to read, debug, and maintain."
     q2_answer = "Django normally handles HTML using 'Templates' (separate .html files) and the render() function."
-    q3_answer = "Templates allow us to separate design (HTML) from logic (Python). They also allow code reusability (like headers/footers) and provide cleaner syntax."
+    q3_answer = "Templates allow us to separate design (HTML) from logic (Python), enabling code reuse and cleaner project structure."
 
-   
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -28,7 +27,7 @@ def profile_view(request):
                 <p><strong>Course:</strong> {my_course}</p>
                 
                 <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-                <button onclick="displayGreeting()">Show Greeting</button>
+                <button onclick="createEmojiRain()">🥳 Make it Rain!</button>
                 
             </div>
 
@@ -47,25 +46,30 @@ def profile_view(request):
         </div>
 
         <script>
-            // FUNCTION 1: Toggles Dark Mode styling
             function toggleDarkMode() {{
                 var element = document.body;
                 element.classList.toggle("dark-mode");
             }}
 
-            // FUNCTION 2: Displays a dynamic greeting based on time
-            function displayGreeting() {{
-                const hour = new Date().getHours();
-                let greeting;
-                if (hour < 12) {{
-                    greeting = "Good Morning, {my_name}!";
-                }} else if (hour < 18) {{
-                    greeting = "Good Afternoon, {my_name}!";
-                }} else {{
-                    greeting = "Good Evening, {my_name}!";
+            function createEmojiRain() {{
+                const emojis = ['🚀', '💻', '🐍', '🔥', '✨', '🎉', '😎', '👾', '💯', '🍕', '🤖'];
+                const container = document.body;
+                
+                for (let i = 0; i < 30; i++) {{
+                    const emoji = document.createElement('div');
+                    emoji.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.classList.add('falling-emoji');
+                    
+                    emoji.style.left = Math.random() * 100 + "vw";
+                    emoji.style.animationDuration = (Math.random() * 2 + 3) + "s"; 
+                    emoji.style.fontSize = (Math.random() * 20 + 20) + "px";
+                    
+                    container.appendChild(emoji);
+                    
+                    setTimeout(() => {{
+                        emoji.remove();
+                    }}, 5000);
                 }}
-                document.getElementById("greeting-text").innerText = greeting;
-                alert(greeting);
             }}
         </script>
 
@@ -85,6 +89,7 @@ def profile_view(request):
                 flex-direction: column;
                 align-items: center;
                 transition: background-color 0.5s, color 0.5s;
+                overflow-x: hidden;
             }}
             .container {{
                 background: white;
@@ -94,6 +99,8 @@ def profile_view(request):
                 border-radius: 15px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.1);
                 margin-bottom: 20px;
+                position: relative;
+                z-index: 10;
             }}
             .profile-header {{
                 text-align: center;
@@ -129,9 +136,32 @@ def profile_view(request):
                 border: none;
                 border-radius: 5px;
                 font-size: 16px;
+                position: relative;
+                z-index: 20;
             }}
             button:hover {{ background-color: #2980b9; }}
             
+            .falling-emoji {{
+                position: fixed;
+                top: -50px;
+                user-select: none;
+                pointer-events: none;
+                z-index: 9999;
+                animation-name: fall;
+                animation-timing-function: linear;
+            }}
+
+            @keyframes fall {{
+                0% {{
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 1;
+                }}
+                100% {{
+                    transform: translateY(110vh) rotate(360deg);
+                    opacity: 0;
+                }}
+            }}
+
             .dark-mode {{
                 background-color: #2c3e50;
                 background-image: url("https://4kwallpapers.com/images/wallpapers/starry-sky-northern-lights-dark-night-landscape-cold-5k-1920x1200-1834.jpg");
@@ -143,7 +173,6 @@ def profile_view(request):
             .dark-mode .container {{
                 background-color: #34495e;
                 color: #ecf0f1;
-                
             }}
             
             .dark-mode h1 {{ color: #ecf0f1; }}
