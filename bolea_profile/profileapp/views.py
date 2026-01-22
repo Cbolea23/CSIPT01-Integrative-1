@@ -2,7 +2,7 @@ from django.http import HttpResponse
 
 def profile_view(request):
     
-    my_name = "Christian Bolea" 
+    my_name = "Christian Louis Bolea" 
     my_course = "Bachelor of Science in Information Technology"
     
     q1_answer = "Using HttpResponse for large projects is messy. Mixing Python and HTML makes code difficult to read, debug, and maintain."
@@ -26,8 +26,8 @@ def profile_view(request):
                 <h1>{my_name}</h1>
                 <p><strong>Course:</strong> {my_course}</p>
                 
-                <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-                <button onclick="createEmojiRain()">🥳 Make it Rain!</button>
+                <button onclick="toggleDarkMode()">🌅/🌆</button>
+                <button onclick="createEmojiRain()">🤫</button>
                 
             </div>
 
