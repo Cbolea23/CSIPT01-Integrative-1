@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Professor Details</title>
+    <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet'>
+    <style>
+        body {
+            background: linear-gradient(to right, #000000, #00213f, #000000);
+            color: white;
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: rgba(0, 33, 63, 0.5);
+            border: 1.3px solid #008cff;
+            border-radius: 13px;
+            padding: 39px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 5.2px 13px rgba(0, 0, 0, 0.3);
+        }
+        h1, h2, h3 {
+            color: #008cff;
+        }
+        p, li {
+            font-size: 20.8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        th, td {
+            border: 1px solid #008cff;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #00213f;
+            color: #008cff;
+            font-size: 20.8px;
+        }
+        .btn-primary {
+            display: inline-block;
+            background-color: #008cff;
+            color: white;
+            padding: 15.6px 32.5px;
+            border-radius: 65px;
+            text-decoration: none;
+            font-size: 20.8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #007bbd;
+            transform: translateY(-2.6px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Professor Details: {{ professor.Name }}</h1>
+        <p><strong>ID:</strong> {{ professor.ProfessorID }}</p>
+        <p><strong>Department:</strong> {{ professor.Department }}</p>
+
+        <h2>Courses Taught</h2>
+        <ul>
+            {% for course in courses %}
+                <li>{{ course.CourseCode }}: {{ course.CourseName }} ({{ course.Credits }} Credits)</li>
+            {% empty %}
+                <li>No courses assigned.</li>
+            {% endfor %}
+        </ul>
+
+        <h2>Assignments</h2>
+        <table>
+            <tr>
+                <th>Assignment ID</th>
+                <th>Course</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+            {% for assignment in assignments %}
+            <tr>
+                <td>{{ assignment.assignment_id }}</td>
+                <td>{{ assignment.course.CourseCode }}</td>
+                <td>{{ assignment.title }}</td>
+                <td>{{ assignment.description }}</td>
+                <td>₱{{ assignment.Total_Amount }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No assignments found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h3>Total Amount Gained: ₱{{ total_amount }}</h3>
+
+        <br>
+        <a href="{% url 'index' %}" class="btn-primary">Back to Professors List</a>
+    </div>
+</body>
+</html>
