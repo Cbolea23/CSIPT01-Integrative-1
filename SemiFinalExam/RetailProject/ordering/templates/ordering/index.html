@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ordering System - Landing Page</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 40px;">
+    <h1>Ordering System</h1>
+    <p>
+        <a href="{% url 'add_customer' %}">Add Customer</a> | 
+        <a href="{% url 'add_order' %}">Add Order</a> | 
+        <a href="{% url 'add_product' %}">Add Product</a> | 
+        <a href="{% url 'home' %}">Home</a> | 
+        <a href="#">Logout</a>
+    </p>
+    
+    <h3>API Endpoints (Admin Only):</h3>
+    <p><a href="{% url 'api_customer_list' %}">Customer List API</a><br>
+       <a href="{% url 'api_order_list' %}">Order List API</a></p>
+    <p style="color: gray; font-size: 12px;">*Update/Delete via API requires Admin + Basic Auth*</p>
+    <hr>
+    
+    <h2>Welcome to the Ordering System</h2>
+    <p>Choose an action from the menu above.</p>
+    
+    <h4>Available Features:</h4>
+    <ul>
+        <li>Add Customer (Manager Only)</li>
+        <li>Add Order (Manager Only)</li>
+        <li>Customer API (Admin Only)</li>
+        <li>Order API (Admin Only)</li>
+    </ul>
+</body>
+</html>
