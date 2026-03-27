@@ -1,64 +1,87 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from rest_framework import generics, mixins, filters
-from rest_framework.authentication import BasicAuthentication
-from rest_framework.permissions import IsAuthenticated, BasePermission
-
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.permissions import BasePermission
 from .models import Customer, Product, Order
 from .forms import CustomerForm, ProductForm, OrderForm
 from .serializers import CustomerSerializer, ProductSerializer, OrderSerializer
 
-def is_manager(user):
-    return user.groups.filter(name='Manager').exists()
-
 class IsAdministrator(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.groups.filter(name='Administrator').exists()
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.groups.filter(name='Administrator').exists()
+        )
+
+class IsManager(BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.groups.filter(name__in=['Manager', 'Administrator']).exists()
+        )
+
+def is_manager_or_admin(user):
+    return user.groups.filter(name__in=['Manager', 'Administrator']).exists()
 
 def home(request):
     return render(request, 'ordering/index.html')
 
 @login_required
-@user_passes_test(is_manager)
+@user_passes_test(is_manager_or_admin)
 def add_customer(request):
-    form = CustomerForm(request.POST or None)
-    if form.is_valid():
-        form.save()
-        return redirect('add_customer')
-    return render(request, 'ordering/form.html', {'form': form, 'title': 'Add Customer'})
+    if request.method == 'POST':
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = CustomerForm()
+    return render(request, 'ordering/customer_form.html', {'form': form, 'title': 'Add Customer'})
 
 @login_required
-@user_passes_test(is_manager)
+@user_passes_test(is_manager_or_admin)
 def add_product(request):
-    form = ProductForm(request.POST or None)
-    if form.is_valid():
-        form.save()
-        return redirect('add_product')
-    return render(request, 'ordering/form.html', {'form': form, 'title': 'Add Product'})
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = ProductForm()
+    return render(request, 'ordering/product_form.html', {'form': form, 'title': 'Add Product'})
 
 @login_required
-@user_passes_test(is_manager)
+@user_passes_test(is_manager_or_admin)
 def add_order(request):
-    form = OrderForm(request.POST or None)
-    if form.is_valid():
-        form.save()
-        return redirect('add_order')
-    return render(request, 'ordering/form.html', {'form': form, 'title': 'Add Order'})
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = OrderForm()
+    return render(request, 'ordering/order_form.html', {'form': form, 'title': 'Add Order'})
 
-class CustomerListAPI(mixins.ListModelMixin, generics.GenericAPIView):
+class BaseAPIView(generics.GenericAPIView):
+    authentication_classes = [BasicAuthentication, SessionAuthentication]
+    permission_classes = [IsAdministrator]
+
+class CustomerListAPI(mixins.ListModelMixin, mixins.CreateModelMixin, BaseAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-class CustomerDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class CustomerDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, BaseAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -69,20 +92,19 @@ class CustomerDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixi
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
-class ProductListAPI(mixins.ListModelMixin, generics.GenericAPIView):
+class ProductListAPI(mixins.ListModelMixin, mixins.CreateModelMixin, BaseAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-class ProductDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, BaseAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -93,22 +115,21 @@ class ProductDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixin
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
-class OrderListAPI(mixins.ListModelMixin, generics.GenericAPIView):
+class OrderListAPI(mixins.ListModelMixin, mixins.CreateModelMixin, BaseAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
     filter_backends = [filters.SearchFilter]
     search_fields = ['product_name__name', 'order_number']
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-class OrderDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class OrderDetailAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, BaseAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAdministrator]
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
