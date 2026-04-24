@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework.authtoken',
     'rest_framework',
     'accounts',
     'corsheaders',
@@ -122,3 +123,9 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'accounts.User'
 CORS_ALLOW_ALL_ORIGINS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
