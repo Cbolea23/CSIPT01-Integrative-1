@@ -1,7 +1,5 @@
 const API_BASE = "http://127.0.0.1:8000/api/";
 
-// --- AUTHENTICATION LOGIC ---
-
 async function handleAuth(action) {
     let username = action === 'login' ? document.getElementById("login-user").value : document.getElementById("reg-user").value;
     let password = action === 'login' ? document.getElementById("login-pass").value : document.getElementById("reg-pass").value;
@@ -20,7 +18,6 @@ async function handleAuth(action) {
         
         let data = await response.json();
         if (response.ok) {
-            // Save token to browser and redirect to main banking page
             localStorage.setItem("bankingToken", data.token);
             window.location.href = "index.html";
         } else {
@@ -36,12 +33,9 @@ function logout() {
     window.location.href = "login.html";
 }
 
-// --- BANKING LOGIC ---
-
 async function loadAccount() {
     let token = localStorage.getItem("bankingToken");
     
-    // If no token exists, boot them to the login page
     if (!token) {
         window.location.href = "login.html";
         return;
@@ -49,7 +43,7 @@ async function loadAccount() {
 
     try {
         let response = await fetch(API_BASE + "account/", {
-            headers: { "Authorization": "Token " + token } // Send token for security
+            headers: { "Authorization": "Token " + token }
         });
         
         let data = await response.json();
@@ -58,7 +52,6 @@ async function loadAccount() {
             document.getElementById("acc-num").innerText = data.account_number;
             document.getElementById("balance").innerText = data.balance;
         } else {
-            // Token might be invalid
             logout();
         }
     } catch (error) {
@@ -80,14 +73,21 @@ async function makeTransaction(type) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Token " + token // Send token for security
+                "Authorization": "Token " + token
             },
             body: JSON.stringify({ amount: amount })
         });
         
         let data = await response.json();
+        
         if (response.ok) {
             alert(data.message);
+            
+            let wantReceipt = confirm("Do you want to download a receipt for this transaction?");
+            if (wantReceipt) {
+                generatePDFReceipt(type, amount, data.new_balance);
+            }
+            
             loadAccount(); 
             document.getElementById("amount").value = "";
         } else {
@@ -98,12 +98,43 @@ async function makeTransaction(type) {
     }
 }
 
-// Check which page we are on and run appropriate startup logic
+function generatePDFReceipt(type, amount, newBalance) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let date = new Date().toLocaleString();
+    let accNum = document.getElementById("acc-num").innerText;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("SecureBank", 105, 20, null, null, "center");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.text("Transaction Receipt", 105, 30, null, null, "center");
+
+    doc.setFontSize(12);
+    doc.text("---------------------------------------------------------", 105, 40, null, null, "center");
+
+    doc.text(`Date: ${date}`, 20, 50);
+    doc.text(`Account Number: ${accNum}`, 20, 60);
+    doc.text(`Transaction Type: ${type.toUpperCase()}`, 20, 70);
+    doc.text(`Amount: PHP ${parseFloat(amount).toFixed(2)}`, 20, 80);
+    doc.text(`New Balance: PHP ${parseFloat(newBalance).toFixed(2)}`, 20, 90);
+
+    doc.text("---------------------------------------------------------", 105, 100, null, null, "center");
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for banking with us!", 105, 110, null, null, "center");
+    doc.text("Project by Bolea, Nagares, De Chavez, Diokno", 105, 130, null, null, "center");
+
+    let fileName = `Receipt_${type}_${Date.now()}.pdf`;
+    doc.save(fileName);
+}
+
 if (window.location.pathname.includes("index.html") || window.location.pathname === "/") {
     window.onload = loadAccount;
 }
 
-// --- TRANSFER LOGIC ---
 async function makeTransfer() {
     let destAcc = document.getElementById("dest-acc").value;
     let amount = document.getElementById("transfer-amount").value;
@@ -123,7 +154,7 @@ async function makeTransfer() {
         let data = await response.json();
         if (response.ok) {
             alert(data.message);
-            loadAccount(); // Refresh balance
+            loadAccount();
             document.getElementById("dest-acc").value = "";
             document.getElementById("transfer-amount").value = "";
         } else {
@@ -132,11 +163,9 @@ async function makeTransfer() {
     } catch (error) { alert("Transfer failed."); }
 }
 
-// --- PROFILE & HISTORY (CRUD) LOGIC ---
 async function loadProfile() {
     let token = localStorage.getItem("bankingToken");
 
-    // Get Profile Info
     let profResponse = await fetch(API_BASE + "profile/", { headers: { "Authorization": "Token " + token }});
     if (profResponse.ok) {
         let profData = await profResponse.json();
@@ -146,12 +175,11 @@ async function loadProfile() {
         document.getElementById("prof-last").value = profData.last_name;
     }
 
-    // Get Transaction History
     let histResponse = await fetch(API_BASE + "transactions/", { headers: { "Authorization": "Token " + token }});
     if (histResponse.ok) {
         let histData = await histResponse.json();
         let tableBody = document.getElementById("history-table");
-        tableBody.innerHTML = ""; // Clear old data
+        tableBody.innerHTML = "";
         
         histData.forEach(tx => {
             let row = `<tr>
@@ -191,7 +219,7 @@ async function deleteAccount() {
         });
         if (response.ok) {
             alert("Account successfully deleted.");
-            logout(); // Kick them back to login screen
+            logout();
         }
     }
 }

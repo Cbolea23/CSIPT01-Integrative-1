@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 import random
 
 class User(AbstractUser):
-    pass # Uses Django's default fields: username, email, password
+    pass
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -14,7 +14,6 @@ class Account(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.account_number:
-            # Generate a random 10-digit account number
             self.account_number = str(random.randint(1000000000, 9999999999))
         super().save(*args, **kwargs)
 
