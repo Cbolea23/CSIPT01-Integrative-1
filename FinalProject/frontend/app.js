@@ -1,4 +1,9 @@
 const API_BASE = "http://127.0.0.1:8000/api/";
+let globalReceiptModal = null;
+
+document.addEventListener('submit', function(e) {
+    e.preventDefault();
+});
 
 async function handleAuth(action) {
     let username = action === 'login' ? document.getElementById("login-user").value : document.getElementById("reg-user").value;
@@ -81,15 +86,9 @@ async function makeTransaction(type) {
         let data = await response.json();
         
         if (response.ok) {
-            alert(data.message);
-            
-            let wantReceipt = confirm("Do you want to download a receipt for this transaction?");
-            if (wantReceipt) {
-                generatePDFReceipt(type, amount, data.new_balance);
-            }
-            
-            loadAccount(); 
             document.getElementById("amount").value = "";
+            showReceiptModal(type, amount, data.new_balance);
+            loadAccount(); 
         } else {
             alert("Error: " + data.error);
         }
@@ -98,12 +97,35 @@ async function makeTransaction(type) {
     }
 }
 
-function generatePDFReceipt(type, amount, newBalance) {
+function showReceiptModal(type, amount, newBalance) {
+    let date = new Date().toLocaleString();
+    let accNum = document.getElementById("acc-num").innerText;
+
+    document.getElementById("rec-date").innerText = date;
+    document.getElementById("rec-acc").innerText = accNum;
+    document.getElementById("rec-type").innerText = type;
+    document.getElementById("rec-amount").innerText = parseFloat(amount).toFixed(2);
+    document.getElementById("rec-balance").innerText = parseFloat(newBalance).toFixed(2);
+
+    if (!globalReceiptModal) {
+        let modalElement = document.getElementById('receiptModal');
+        globalReceiptModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+    globalReceiptModal.show();
+}
+
+function downloadPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    let date = new Date().toLocaleString();
-    let accNum = document.getElementById("acc-num").innerText;
+    let date = document.getElementById("rec-date").innerText;
+    let accNum = document.getElementById("rec-acc").innerText;
+    let type = document.getElementById("rec-type").innerText;
+    let amount = document.getElementById("rec-amount").innerText;
+    let newBalance = document.getElementById("rec-balance").innerText;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
@@ -119,20 +141,15 @@ function generatePDFReceipt(type, amount, newBalance) {
     doc.text(`Date: ${date}`, 20, 50);
     doc.text(`Account Number: ${accNum}`, 20, 60);
     doc.text(`Transaction Type: ${type.toUpperCase()}`, 20, 70);
-    doc.text(`Amount: PHP ${parseFloat(amount).toFixed(2)}`, 20, 80);
-    doc.text(`New Balance: PHP ${parseFloat(newBalance).toFixed(2)}`, 20, 90);
+    doc.text(`Amount: PHP ${amount}`, 20, 80);
+    doc.text(`New Balance: PHP ${newBalance}`, 20, 90);
 
     doc.text("---------------------------------------------------------", 105, 100, null, null, "center");
     doc.setFont("helvetica", "italic");
     doc.text("Thank you for banking with us!", 105, 110, null, null, "center");
-    doc.text("Project by Bolea, Nagares, De Chavez, Diokno", 105, 130, null, null, "center");
 
     let fileName = `Receipt_${type}_${Date.now()}.pdf`;
     doc.save(fileName);
-}
-
-if (window.location.pathname.includes("index.html") || window.location.pathname === "/") {
-    window.onload = loadAccount;
 }
 
 async function makeTransfer() {
@@ -153,10 +170,10 @@ async function makeTransfer() {
         });
         let data = await response.json();
         if (response.ok) {
-            alert(data.message);
-            loadAccount();
             document.getElementById("dest-acc").value = "";
             document.getElementById("transfer-amount").value = "";
+            showReceiptModal("transfer", amount, data.new_balance);
+            loadAccount();
         } else {
             alert("Error: " + data.error);
         }
@@ -222,4 +239,8 @@ async function deleteAccount() {
             logout();
         }
     }
+}
+
+if (window.location.pathname.includes("index.html") || window.location.pathname === "/") {
+    window.onload = loadAccount;
 }
