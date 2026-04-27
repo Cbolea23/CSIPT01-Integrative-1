@@ -143,3 +143,30 @@ class CloseAccountAPI(APIView):
         user = request.user
         user.delete() 
         return Response({"message": "Account successfully closed and deleted."})
+
+class ExternalTransferAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        sender = request.user.account
+        amount = Decimal(request.data.get('amount', 0))
+        destination_acc = request.data.get('destination_account')
+        target_bank = request.data.get('target_bank')
+
+        if amount <= 0 or amount > sender.balance:
+            return Response({"error": "Invalid amount or insufficient funds"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not target_bank or not destination_acc:
+            return Response({"error": "Bank name and account number are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            sender.balance -= amount
+            sender.save()
+            Transaction.objects.create(
+                account=sender, 
+                type='transfer', 
+                amount=amount, 
+                description=f'Transfer to {target_bank} - {destination_acc}'
+            )
+            
+        return Response({"message": f"Successfully transferred to {target_bank}", "new_balance": sender.balance})
